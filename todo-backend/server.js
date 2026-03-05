@@ -4,11 +4,19 @@ const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 5454;
+const PORT = process.env.PORT || 4000;
 
+const corsoptions = {
+  origin: 'http://localhost:5174', // Adjust this to your frontend URL
+   method: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+  allowedHeaders: ["Content-Type"]
+}
+
+const morgan = require('morgan');
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(morgan('dev'));
 
 // In-memory database (replace with real database in production)
 let todos = [

@@ -20,6 +20,7 @@ function App() {
   const fetchTodos = async () => {
     try {
       const response = await axios.get(`${API_URL}/todos`);
+      console.log(response);
       setTodos(response.data);
       setLoading(false);
     } catch (err) {
