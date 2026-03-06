@@ -1,84 +1,122 @@
-// src/components/TodoItem.js
 import React, { useState } from 'react';
+import axios from 'axios';
+import API_BASE_URL from '../config';
 
-function TodoItem({ todo, onToggle, onDelete, onUpdate }) {
+const TodoItem = ({ todo, onUpdate, onDelete }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(todo.text);
+  const [loading, setLoading] = useState(false);
 
-  const handleUpdate = () => {
-    if (editText.trim() && editText !== todo.text) {
-      onUpdate(todo.id, editText);
+  const handleToggleComplete = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.put(`${API_BASE_URL}/todos/${todo.id}`, {
+        completed: !todo.completed
+      });
+      onUpdate(response.data);
+    } catch (error) {
+      console.error('Error updating todo:', error);
+      alert('Failed to update todo');
+    } finally {
+      setLoading(false);
     }
-    setIsEditing(false);
   };
 
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      handleUpdate();
-    } else if (e.key === 'Escape') {
+  const handleEdit = async () => {
+    if (!editText.trim() || editText === todo.text) {
       setIsEditing(false);
-      setEditText(todo.text);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await axios.put(`${API_BASE_URL}/todos/${todo.id}`, {
+        text: editText.trim()
+      });
+      onUpdate(response.data);
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error updating todo:', error);
+      alert('Failed to update todo');
+    } finally {
+      setLoading(false);
     }
   };
+
+  const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to delete this todo?')) return;
+    
+    setLoading(true);
+    try {
+      await axios.delete(`${API_BASE_URL}/todos/${todo.id}`);
+      onDelete(todo.id);
+    } catch (error) {
+      console.error('Error deleting todo:', error);
+      alert('Failed to delete todo');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (isEditing) {
+    return (
+      <div className="flex items-center gap-3 p-4 bg-white rounded-lg shadow-sm border border-gray-200">
+        <input
+          type="text"
+          value={editText}
+          onChange={(e) => setEditText(e.target.value)}
+          className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          autoFocus
+          disabled={loading}
+        />
+        <button
+          onClick={handleEdit}
+          disabled={loading}
+          className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:opacity-50"
+        >
+          Save
+        </button>
+        <button
+          onClick={() => setIsEditing(false)}
+          className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+        >
+          Cancel
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <div className={`bg-white rounded-lg shadow-md p-4 transition-all hover:shadow-lg ${
-      todo.completed ? 'opacity-75' : ''
-    }`}>
-      <div className="flex items-center gap-3">
-        <input
-          type="checkbox"
-          checked={todo.completed}
-          onChange={() => onToggle(todo.id)}
-          className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500 cursor-pointer"
-        />
-        
-        {isEditing ? (
-          <input
-            type="text"
-            value={editText}
-            onChange={(e) => setEditText(e.target.value)}
-            onBlur={handleUpdate}
-            onKeyDown={handleKeyPress}
-            className="flex-1 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
-            autoFocus
-          />
-        ) : (
-          <span
-            className={`flex-1 text-gray-800 ${
-              todo.completed ? 'line-through text-gray-500' : ''
-            }`}
-            onDoubleClick={() => setIsEditing(true)}
-          >
-            {todo.text}
-          </span>
-        )}
-        
-        <div className="flex gap-2">
-          {!isEditing && (
-            <button
-              onClick={() => setIsEditing(true)}
-              className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
-              title="Edit"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-              </svg>
-            </button>
-          )}
-          <button
-            onClick={() => onDelete(todo.id)}
-            className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
-            title="Delete"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-          </button>
-        </div>
+    <div className="flex items-center gap-3 p-4 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+      <input
+        type="checkbox"
+        checked={todo.completed}
+        onChange={handleToggleComplete}
+        disabled={loading}
+        className="w-5 h-5 text-blue-500 rounded focus:ring-blue-500 cursor-pointer"
+      />
+      <span className={`flex-1 ${todo.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+        {todo.text}
+      </span>
+      <div className="text-xs text-gray-400">
+        {new Date(todo.createdAt).toLocaleDateString()}
       </div>
+      <button
+        onClick={() => setIsEditing(true)}
+        disabled={loading}
+        className="px-3 py-1 text-sm bg-yellow-500 text-white rounded-md hover:bg-yellow-600 disabled:opacity-50"
+      >
+        Edit
+      </button>
+      <button
+        onClick={handleDelete}
+        disabled={loading}
+        className="px-3 py-1 text-sm bg-red-500 text-white rounded-md hover:bg-red-600 disabled:opacity-50"
+      >
+        Delete
+      </button>
     </div>
   );
-}
+};
 
 export default TodoItem;
