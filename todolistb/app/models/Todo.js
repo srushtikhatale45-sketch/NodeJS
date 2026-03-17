@@ -4,23 +4,17 @@ const sequelize = require('../utils/db');
 const Todo = sequelize.define('Todo', {
   id: {
     type: DataTypes.INTEGER,
-    primaryKey: true,
-    autoIncrement: true
+    autoIncrement: true,
+    primaryKey: true
   },
   text: {
     type: DataTypes.STRING,
-    allowNull: false,
-    validate: {
-      notEmpty: true
-    }
+    allowNull: false
   },
   completed: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
   }
-}, {
-  timestamps: true, // This will add createdAt and updatedAt
-  tableName: 'todos'
 });
 
 module.exports = Todo;
